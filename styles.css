@@ -1,0 +1,12 @@
+.count-message-not-read {
+    margin-left: 5px !important;
+}
+
+.activityiconcontainer > i {
+    color: white;
+}
+
+
+a:hover {
+    text-decoration: none!important;
+}
