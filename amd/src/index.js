@@ -1,6 +1,6 @@
 import * as Repository from 'block_novelties_notices/repository';
 import Ajax from 'core/ajax';
-
+import * as Str from 'core/str';
 export const init = () => {
 
     // eslint-disable-next-line no-undef
@@ -18,7 +18,10 @@ export const init = () => {
             // Renderizado final,
             dataToRender: [],
             // Variables de la aplicacion/bloque
-            tab: null
+            tab: null,
+            emptyImage: null,
+            emptyMainTitle: '',
+            emptySecondTitle: ''
         },
         methods: {
             async getLangsKey() {
@@ -257,6 +260,9 @@ export const init = () => {
             }
         },
         mounted: async function () {
+            this.emptyImage = M.util.image_url('empty', 'block_novelties_notices');
+            this.emptyMainTitle = await Str.get_string('empty_title','block_novelties_notices');
+            this.emptySecondTitle = await Str.get_string('empty_subtitle','block_novelties_notices');
             this.loading = true;
             await this.getLangsKey();
             await this.getNovelties();
@@ -273,9 +279,11 @@ export const init = () => {
                 <div v-if="loading">
                     <v-card min-height="200" elevation="0" loading></v-card>
                 </div>
-                <div v-else>
-                    <div v-if="dataToRender.length == 0">
-                        vista vacia
+                <div v-else class="fill-height">
+                    <div v-if="dataToRender.length == 0" class="d-flex justify-center align-center flex-column fill-height">
+                        <v-img :src="emptyImage" max-height="140" contain></v-img>
+                        <p class="text-h6">{{emptyMainTitle}}</p>
+                        <p class="text-subtitle-2">{{emptySecondTitle}}</p>
                     </div>
                     <div v-else>
                         <v-tabs center-active show-arrows v-model="tab" grow>

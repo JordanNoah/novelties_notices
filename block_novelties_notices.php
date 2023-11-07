@@ -3,7 +3,7 @@
 class block_novelties_notices extends block_base
 {
     function init(){
-        $this->title = "Estados";
+        $this->title = get_string('pluginname','block_novelties_notices');
     }
 
     function get_content()

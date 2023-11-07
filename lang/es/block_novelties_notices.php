@@ -16,3 +16,6 @@ $string['type_novelty:new_activities'] = 'Nuevos';
 $string['type_novelty:corrected_activities'] = 'Corregidas';
 $string['type_novelty:subscribed_forums'] = 'Suscripciones';
 $string['type_novelty:direct_response_forum'] = 'Respuestas';
+//empty view
+$string['empty_title']='!Felicitaciones!';
+$string['empty_subtitle']='Estás al día con tus actividades';
