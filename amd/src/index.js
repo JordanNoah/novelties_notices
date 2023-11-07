@@ -4,11 +4,12 @@ import Ajax from 'core/ajax';
 export const init = () => {
 
     // eslint-disable-next-line no-undef
-        new Vue({
+    new Vue({
         el: '#block_novelties_notices',
         // eslint-disable-next-line no-undef
         vuetify: new Vuetify(),
         data: {
+            loading: true,
             // Recolecion de data no limpiada
             novelties: null,
             alertsConfigs: null,
@@ -64,8 +65,11 @@ export const init = () => {
                     }])[0];
                     configskeys = JSON.parse(response.configs);
                 } else {
-                    // eslint-disable-next-line no-console
-                    configskeys = M.plugins.courseView.configs;
+                    if(M.plugins.courseView.configs.configs){
+                        configskeys = JSON.parse(M.plugins.courseView.configs.configs);
+                    }else{
+                        configskeys = M.plugins.courseView.configs;
+                    }
                 }
                 this.alertsConfigs = configskeys;
             },
@@ -78,7 +82,7 @@ export const init = () => {
 
                 var fetchurl = `${this.alertsConfigs.urlapi}/notices?${params.toString()}`;
 
-                var response = await fetch(`${fetchurl}`).catch(function() {
+                var response = await fetch(`${fetchurl}`).catch(function () {
                     return undefined;
                 });
 
@@ -86,27 +90,27 @@ export const init = () => {
                     this.alerts = await response.json();
                 }
             },
-            orderTopics(noveltiesTopic, alertsTopic) {
-                const orderTopics = [
-                    'forum_news',
-                    'overdue_activities',
-                    'activities_course_soon_close',
-                    'corrected_activities',
-                    'direct_response_forum',
-                    'new_activities',
-                    'direct_message_teacher'
-                ];
+            orderTopics() {
+                if(this.dataToRender.length > 0){
+                    const orderTopics = [
+                        'forum_news',
+                        'overdue_activities',
+                        'activities_course_soon_close',
+                        'corrected_activities',
+                        'direct_response_forum',
+                        'new_activities',
+                        'direct_message_teacher'
+                    ];
 
-                var actualTopics = noveltiesTopic.concat(alertsTopic);
+                    const objetoOrdenado = this.dataToRender.sort((a, b) => {
+                        const indexA = orderTopics.indexOf(a.abbreviation);
+                        const indexB = orderTopics.indexOf(b.abbreviation);
 
-                // Limpia cualquier null que me pueda generar el mapeo
+                        return indexA - indexB;
+                    });
 
-                actualTopics = actualTopics.filter(n => n);
-
-                // eslint-disable-next-line max-len
-                return actualTopics.sort(
-                    (a, b) => orderTopics.indexOf(a.abbreviation) - orderTopics.indexOf(b.abbreviation)
-                );
+                    this.dataToRender = objetoOrdenado;
+                }
             },
             fusionAlertAndNovelties() {
                 this.dataToRender = this.alerts;
@@ -126,9 +130,9 @@ export const init = () => {
                     object.id = element.id;
                     object.permanent = element.is_permanent || false;
                     object.langkey = element.lang_key;
-                    object.name = element.name;
-                    object.notices = element.notices || element.novelties;
                     object.isNovelty = element.is_novelty || false;
+                    object.notices = element.notices || element.novelties;
+                    object.name = this.getGroupTitle(object,element);
 
                     var arraynoticesmapped = [];
 
@@ -141,8 +145,8 @@ export const init = () => {
                         noticesObj.detail = this.getDetailString(elementnotices, element);
                         noticesObj.icon = this.getIcon(elementnotices, element);
                         noticesObj.viewed = elementnotices.is_view;
-                            noticesObj.url = elementnotices.url || false;
-                            // NoticesObj.detailCounter = this.getDetailCounter(elementnotices,element);
+                        noticesObj.url = elementnotices.url || false;
+                        // NoticesObj.detailCounter = this.getDetailCounter(elementnotices,element);
                         arraynoticesmapped.push(noticesObj);
                     }
 
@@ -154,6 +158,13 @@ export const init = () => {
                 }
 
                 this.dataToRender = newRenderBase;
+            },
+            getGroupTitle(object,elementParent){
+                if (object.isNovelty) {
+                    return elementParent.name;
+                }else{
+                    return this.langKeys[elementParent.lang_key];
+                }
             },
             getDetailCounter(element, elementParent) {
                 if (elementParent.is_novelty) {
@@ -202,15 +213,15 @@ export const init = () => {
             },
             async markasview(element, elementParent) {
                 var error = false;
-                if (!elementParent.permanent){
-                    if(elementParent.isNovelty){
+                if (!elementParent.permanent) {
+                    if (elementParent.isNovelty) {
                         let args = {
                             novelty_id: element.id,
                             type_novelty: elementParent.abbreviation
                         };
 
                         var request = await Repository.markedAsRead(args);
-                        if(!request.is_view){
+                        if (!request.is_view) {
                             error = true;
                         }
                     } else {
@@ -224,12 +235,12 @@ export const init = () => {
                         }
                     }
 
-                    if(!error){
+                    if (!error) {
                         var indexParent = this.dataToRender.findIndex((x) => {
                             return x.abbreviation === elementParent.abbreviation;
                         });
 
-                        if (indexParent > -1){
+                        if (indexParent > -1) {
                             var indexNotices = this.dataToRender[indexParent].notices.findIndex((x) => {
                                 return x.id === element.id;
                             });
@@ -245,89 +256,97 @@ export const init = () => {
                 }
             }
         },
-        mounted: async function() {
+        mounted: async function () {
+            this.loading = true;
             await this.getLangsKey();
             await this.getNovelties();
             await this.getAlertsConfigs();
             await this.getAlerts();
             await this.fusionAlertAndNovelties();
             await this.cleanDataToRender();
+            this.orderTopics();
+            this.loading = false;
         },
         template: `
-            <v-app>
-                <v-main>
-                    <v-tabs center-active show-arrows v-model="tab" grow>
-                        <v-tab v-for="i in dataToRender" :key="i.abbreviation">
-                            {{i.name}}
-                            <v-badge inline :content="i.notices.length">
-                            </v-badge>
-                        </v-tab>
-                    </v-tabs>
-                    <v-divider class="ma-0"></v-divider>
-                    <v-tabs-items v-model="tab">
-                        <v-tab-item v-for="i in dataToRender" :key="i.abbreviation">
-                            <div class="pt-2">
-                                <div class="font-weight-bold">
-                                    {{i.description}}
-                                </div>
-                                <div class="my-2 mx-1" style="max-height: 190px; overflow-y: auto;">
-                                    <v-hover v-slot="{ hover }" v-for="j in i.notices" :key="j.id">
-                                        <v-card class="mb-1 mr-1 d-flex pa-2" flat 
-                                        :color="hover ? '#f8f9fa' : ''"
-                                        >
-                                            <div class="d-flex flex-grow-1">
-                                            <a :href="j.url ? j.url:'#'" class="d-flex flex-grow-1">
-                                                <div class="d-flex align-center">
-                                                    <div v-if="i.isNovelty"
-                                                        class="activityiconcontainer 
-                                                        assessment 
-                                                        collaboration 
-                                                        icon_novelties_alerts
-                                                        pa-1
-                                                        courseicon mr-3"
-                                                        :class="j.purpose">
-                                                        <v-img :src="getIconImage(j)" class="activityicon"></v-img>    
-                                                    </div>
-                                                    <div class="activityiconcontainer
-                                                    assessment
-                                                    collaboration
-                                                    icon_novelties_alerts
-                                                    pa-1
-                                                    courseicon mr-3 activityicon
-                                                    " v-else v-html="j.icon">
-                                                    </div>
+        <v-app>
+            <v-main>
+                <div v-if="loading">
+                    <v-card min-height="200" elevation="0" loading></v-card>
+                </div>
+                <div v-else>
+                    <div v-if="dataToRender.length == 0">
+                        vista vacia
+                    </div>
+                    <div v-else>
+                        <v-tabs center-active show-arrows v-model="tab" grow>
+                            <v-tab v-for="i in dataToRender" :key="i.abbreviation">
+                                <span class="text-capitalize">{{i.name}}</span>
+                                <v-badge inline :content="i.notices.length">
+                                </v-badge>
+                            </v-tab>
+                        </v-tabs>
+                        <v-divider class="ma-0"></v-divider>
+                        <v-tabs-items v-model="tab">
+                            <v-tab-item v-for="i in dataToRender" :key="i.abbreviation">
+                                <div class="pt-2">
+                                    <div class="font-weight-bold">
+                                        {{i.description}}
+                                    </div>
+                                    <div class="my-2 mx-1" style="max-height: 190px; overflow-y: auto;">
+                                        <v-hover v-slot="{ hover }" v-for="j in i.notices" :key="j.id">
+                                            <v-card class="mb-1 mr-1 d-flex pa-2" flat :color="hover ? '#f8f9fa' : ''">
+                                                <div class="d-flex flex-grow-1">
+                                                    <a :href="j.url ? j.url:'#'" class="d-flex flex-grow-1">
+                                                        <div class="d-flex align-center">
+                                                            <div v-if="i.isNovelty" class="activityiconcontainer 
+                                                                assessment 
+                                                                collaboration 
+                                                                icon_novelties_alerts
+                                                                pa-1
+                                                                courseicon mr-3" :class="j.purpose">
+                                                                <v-img :src="getIconImage(j)" class="activityicon"></v-img>
+                                                            </div>
+                                                            <div class="activityiconcontainer
+                                                            assessment
+                                                            collaboration
+                                                            icon_novelties_alerts
+                                                            pa-1
+                                                            courseicon mr-3 activityicon
+                                                            " v-else v-html="j.icon">
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <div v-html="j.title" class="
+                                                                font-weight-bold
+                                                                primary--text
+                                                            "></div>
+                                                            <div v-html="j.detail" class="
+                                                                d-flex align-center 
+                                                                font-weight-medium
+                                                                primary--text
+                                                                text-body-2
+                                                            "></div>
+                                                        </div>
+                                                    </a>
                                                 </div>
-                                                <div>
-                                                    <div v-html="j.title" class="
-                                                        font-weight-bold
-                                                        primary--text
-                                                    "></div>
-                                                    <div v-html="j.detail" class="
-                                                        d-flex align-center 
-                                                        font-weight-medium
-                                                        primary--text
-                                                        text-body-2
-                                                    "></div>
+                                                <div v-if="!i.permanent" class="d-flex align-center justify-center"
+                                                    style="text-decoration: none">
+                                                    <v-btn icon @click="markasview(j,i)">
+                                                        <v-icon>
+                                                            mdi-eye
+                                                        </v-icon>
+                                                    </v-btn>
                                                 </div>
-                                            </a>
-                                            </div>
-                                            <div v-if="!i.permanent" class="d-flex align-center justify-center"
-                                            style="text-decoration: none"
-                                            >
-                                                <v-btn icon @click="markasview(j,i)">
-                                                    <v-icon>
-                                                        mdi-eye
-                                                    </v-icon>
-                                                </v-btn>
-                                            </div>                                        
-                                        </v-card>
-                                    </v-hover>
+                                            </v-card>
+                                        </v-hover>
+                                    </div>
                                 </div>
-                            </div>
-                        </v-tab-item>
-                    </v-tabs-items>
-                </v-main>
-            </v-app>
+                            </v-tab-item>
+                        </v-tabs-items>                    
+                    </div>
+                </div>
+            </v-main>
+        </v-app>
         `
     });
 };

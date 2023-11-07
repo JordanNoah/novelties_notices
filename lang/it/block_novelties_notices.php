@@ -6,10 +6,10 @@ $string['all'] = 'Tutte le categorie';
 $string['message_unread'] = 'Non letto';
 $string['marked_read'] = 'Segna come letto';
 $string['without_novelties'] = 'Senza novità';
-$string['novelties_and_notices:addinstance'] = 'Aggiungi un nuovo blocco Novità e avvisi';
-$string['novelties_and_notices:myaddinstance'] = "Aggiungere un nuovo blocco novità e avvisi all'area personale";
-$string['novelties_and_notices:viewaddupdatemodule'] = 'Visualizza i moduli aggiunti e aggiornati nel blocco Novità e avvisi.';
-$string['novelties_and_notices:viewdeletemodule'] = 'Visualizza i moduli rimossi nel blocco Avvisi e novità';
+$string['novelties_notices:addinstance'] = 'Aggiungi un nuovo blocco Novità e avvisi';
+$string['novelties_notices:myaddinstance'] = "Aggiungere un nuovo blocco novità e avvisi all'area personale";
+$string['novelties_notices:viewaddupdatemodule'] = 'Visualizza i moduli aggiunti e aggiornati nel blocco Novità e avvisi.';
+$string['novelties_notices:viewdeletemodule'] = 'Visualizza i moduli rimossi nel blocco Avvisi e novità';
 //novelties name
 $string['type_novelty:forum_news'] = 'Avvisi.';
 $string['type_novelty:new_activities'] = 'Nuovo';
