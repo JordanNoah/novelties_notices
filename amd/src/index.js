@@ -1,13 +1,27 @@
 import * as Repository from 'block_novelties_notices/repository';
 import Ajax from 'core/ajax';
 import * as Str from 'core/str';
-export const init = () => {
 
+export const init = () => {
     // eslint-disable-next-line no-undef
-    new Vue({
+    var vuenoveltiesnotices = new Vue({
         el: '#block_novelties_notices',
         // eslint-disable-next-line no-undef
-        vuetify: new Vuetify(),
+        vuetify: new Vuetify({
+            theme:{
+                themes:{
+                    light:{
+                        primary: '#771385',
+                        secondary: '#424242',
+                        accent: '#82B1FF',
+                        error: '#FF5252',
+                        info: '#2196F3',
+                        success: '#4CAF50',
+                        warning: '#FFC107'
+                    }
+                }
+            }
+        }),
         data: {
             loading: true,
             // Recolecion de data no limpiada
@@ -257,13 +271,25 @@ export const init = () => {
                         }
                     }
                 }
+            },
+            onResize(){
+                var containerlist = document.getElementsByClassName('containerlist');
+                if (window.innerWidth > 960) {
+                    setTimeout(() => {
+                        var tabsitems = document.getElementsByClassName('itemssection');
+
+                        containerlist[0].style.height = `${tabsitems[0].offsetHeight - 45}px`;
+                    }, 100);
+                }else{
+                    containerlist[0].style.height = `235px`;
+                }
             }
         },
         mounted: async function () {
+            this.loading = true;
             this.emptyImage = M.util.image_url('empty', 'block_novelties_notices');
             this.emptyMainTitle = await Str.get_string('empty_title','block_novelties_notices');
             this.emptySecondTitle = await Str.get_string('empty_subtitle','block_novelties_notices');
-            this.loading = true;
             await this.getLangsKey();
             await this.getNovelties();
             await this.getAlertsConfigs();
@@ -279,28 +305,31 @@ export const init = () => {
                 <div v-if="loading">
                     <v-card min-height="200" elevation="0" loading></v-card>
                 </div>
-                <div v-else class="fill-height">
+                <div v-else class="fill-height" ref="body">
                     <div v-if="dataToRender.length == 0" class="d-flex justify-center align-center flex-column fill-height">
                         <v-img :src="emptyImage" max-height="140" contain></v-img>
                         <p class="text-h6">{{emptyMainTitle}}</p>
                         <p class="text-subtitle-2">{{emptySecondTitle}}</p>
                     </div>
-                    <div v-else>
-                        <v-tabs center-active show-arrows v-model="tab" grow>
-                            <v-tab v-for="i in dataToRender" :key="i.abbreviation">
-                                <span class="text-capitalize">{{i.name}}</span>
-                                <v-badge inline :content="i.notices.length">
-                                </v-badge>
-                            </v-tab>
-                        </v-tabs>
-                        <v-divider class="ma-0"></v-divider>
-                        <v-tabs-items v-model="tab">
+                    <div v-else class="fill-height d-flex flex-column">
+                        <div>
+                            <v-tabs center-active show-arrows v-model="tab" grow ref="tabs">
+                                <v-tab v-for="i in dataToRender" :key="i.abbreviation">
+                                    <span class="text-capitalize">{{i.name}}</span>
+                                    <v-badge inline :content="i.notices.length">
+                                    </v-badge>
+                                </v-tab>
+                            </v-tabs>
+                            <v-divider class="ma-0"></v-divider>
+                        </div>
+                        <v-tabs-items v-model="tab" ref="tabitem"  style="flex: 1" v-resize="onResize" class="itemssection">
                             <v-tab-item v-for="i in dataToRender" :key="i.abbreviation">
                                 <div class="pt-2">
                                     <div class="font-weight-bold">
                                         {{i.description}}
                                     </div>
-                                    <div class="my-2 mx-1" style="max-height: 190px; overflow-y: auto;">
+                                    <div class="mt-2 mx-1 containerlist" 
+                                        style="height: 235px;overflow-y: auto;">
                                         <v-hover v-slot="{ hover }" v-for="j in i.notices" :key="j.id">
                                             <v-card class="mb-1 mr-1 d-flex pa-2" flat :color="hover ? '#f8f9fa' : ''">
                                                 <div class="d-flex flex-grow-1">
@@ -357,4 +386,6 @@ export const init = () => {
         </v-app>
         `
     });
+
+    window.vueplugins().addPlugin(vuenoveltiesnotices);
 };
